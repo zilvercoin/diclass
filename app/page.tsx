@@ -50,7 +50,7 @@ export default function Home() {
                 <img
                   alt="DiClass Dashboard"
                   className="rounded-lg object-cover shadow-xl"
-                  src="/placeholder.svg?height=550&width=550"
+                  src="/images/education-book.png"
                   width={550}
                   height={550}
                 />

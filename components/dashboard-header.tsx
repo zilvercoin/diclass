@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -11,16 +12,32 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { GraduationCap, Bell, Settings, LogOut } from "lucide-react"
+import { GraduationCap, Bell, Settings, LogOut, User } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { getCurrentUser, logout } from "@/lib/auth"
+import type { User as UserType } from "@/lib/auth"
 
 export function DashboardHeader() {
   const router = useRouter()
+  const [user, setUser] = useState<UserType | null>(null)
+
+  useEffect(() => {
+    // Verificar si el usuario está autenticado
+    const currentUser = getCurrentUser()
+    if (!currentUser) {
+      router.push("/login")
+      return
+    }
+
+    setUser(currentUser)
+  }, [router])
 
   const handleLogout = () => {
-    // Simulación de cierre de sesión
-    router.push("/")
+    logout()
+    router.push("/login")
   }
+
+  if (!user) return null
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -59,8 +76,8 @@ export function DashboardHeader() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src="/placeholder.svg?height=32&width=32" alt="@user" />
-                    <AvatarFallback>US</AvatarFallback>
+                    <AvatarImage src={user.avatar || "/placeholder.svg?height=32&width=32"} alt={user.name} />
+                    <AvatarFallback>{user.name.substring(0, 2).toUpperCase()}</AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
@@ -68,12 +85,12 @@ export function DashboardHeader() {
                 <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem>
-                  <Link href="/profile" className="flex w-full">
-                    Perfil
+                  <Link href="/profile" className="flex w-full items-center">
+                    <User className="mr-2 h-4 w-4" /> Perfil
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem>
-                  <Link href="/settings" className="flex w-full">
+                  <Link href="/settings" className="flex w-full items-center">
                     <Settings className="mr-2 h-4 w-4" /> Configuración
                   </Link>
                 </DropdownMenuItem>

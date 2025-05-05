@@ -10,24 +10,71 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { GraduationCap } from "lucide-react"
+import { useToast } from "@/components/ui/use-toast"
 
 export default function RegisterPage() {
   const router = useRouter()
+  const { toast } = useToast()
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
   const [userType, setUserType] = useState("student")
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
+    setError("")
+
+    // Validación básica
+    if (!name || !email || !password || !confirmPassword) {
+      setError("Por favor, completa todos los campos")
+      setLoading(false)
+      return
+    }
+
+    if (password !== confirmPassword) {
+      setError("Las contraseñas no coinciden")
+      setLoading(false)
+      return
+    }
+
+    if (password.length < 8) {
+      setError("La contraseña debe tener al menos 8 caracteres")
+      setLoading(false)
+      return
+    }
 
     // Simulación de registro
-    setTimeout(() => {
+    // En una aplicación real, esto se conectaría a un backend
+    try {
+      // Guardar información de sesión
+      localStorage.setItem(
+        "diclass_user",
+        JSON.stringify({
+          id: "1",
+          name: name,
+          email: email,
+          role: userType,
+          avatar: "/placeholder.svg?height=40&width=40",
+        }),
+      )
+
+      toast({
+        title: "Registro exitoso",
+        description: "Tu cuenta ha sido creada correctamente",
+      })
+
+      // Redireccionar al dashboard
+      setTimeout(() => {
+        router.push("/dashboard")
+      }, 1000)
+    } catch (err) {
+      setError("Error al crear la cuenta. Inténtalo de nuevo.")
       setLoading(false)
-      router.push("/dashboard")
-    }, 1500)
+    }
   }
 
   return (
@@ -35,12 +82,17 @@ export default function RegisterPage() {
       <div className="flex flex-1 flex-col justify-center px-6 py-12">
         <div className="mx-auto w-full max-w-md">
           <div className="flex flex-col items-center space-y-2 text-center">
-            <GraduationCap className="h-12 w-12 text-rose-600" />
+            <Link href="/">
+              <GraduationCap className="h-12 w-12 text-rose-600" />
+            </Link>
             <h1 className="text-4xl font-black tracking-tighter text-rose-600">DiClass</h1>
             <p className="text-gray-600">Crea tu cuenta para comenzar</p>
           </div>
           <div className="mt-8">
             <div className="bg-white p-6 shadow-lg rounded-lg">
+              {error && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-md text-sm">{error}</div>
+              )}
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-2">
                   <Label htmlFor="name">Nombre completo</Label>
@@ -72,6 +124,17 @@ export default function RegisterPage() {
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirmar contraseña</Label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    placeholder="••••••••"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
                     required
                   />
                 </div>

@@ -139,13 +139,13 @@ export default function Home() {
           </div>
           <p className="text-sm text-gray-500 md:ml-auto">© 2024 DiClass. Todos los derechos reservados.</p>
           <div className="flex gap-4">
-            <Link href="#" className="text-sm text-gray-500 hover:underline">
+            <Link href="/terms" className="text-sm text-gray-500 hover:underline">
               Términos
             </Link>
-            <Link href="#" className="text-sm text-gray-500 hover:underline">
+            <Link href="/privacy" className="text-sm text-gray-500 hover:underline">
               Privacidad
             </Link>
-            <Link href="#" className="text-sm text-gray-500 hover:underline">
+            <Link href="/contact" className="text-sm text-gray-500 hover:underline">
               Contacto
             </Link>
           </div>

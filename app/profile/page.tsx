@@ -84,10 +84,6 @@ export default function ProfilePage() {
     setAvatar(imageDataUrl)
   }
 
-  const navigateToSettings = () => {
-    router.push("/settings")
-  }
-
   if (!user) return null
 
   return (
@@ -190,18 +186,14 @@ export default function ProfilePage() {
                             <h3 className="font-medium">Notificaciones por correo</h3>
                             <p className="text-sm text-gray-500">Recibe notificaciones por correo electrónico</p>
                           </div>
-                          <Button variant="outline" onClick={navigateToSettings}>
-                            Configurar
-                          </Button>
+                          <Button variant="outline">Configurar</Button>
                         </div>
                         <div className="flex items-center justify-between">
                           <div>
                             <h3 className="font-medium">Notificaciones en la plataforma</h3>
                             <p className="text-sm text-gray-500">Configura las notificaciones dentro de DiClass</p>
                           </div>
-                          <Button variant="outline" onClick={navigateToSettings}>
-                            Configurar
-                          </Button>
+                          <Button variant="outline">Configurar</Button>
                         </div>
                       </div>
                     </TabsContent>

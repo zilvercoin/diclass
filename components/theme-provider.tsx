@@ -15,13 +15,11 @@ type ThemeProviderProps = {
 type ThemeProviderState = {
   theme: Theme
   setTheme: (theme: Theme) => void
-  resetTheme: () => void
 }
 
 const initialState: ThemeProviderState = {
   theme: "system",
   setTheme: () => null,
-  resetTheme: () => null,
 }
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
@@ -70,18 +68,11 @@ export function ThemeProvider({ children, defaultTheme = "system" }: ThemeProvid
     }
   }, [theme, mounted])
 
-  // Función para resetear el tema al cerrar sesión
-  const resetTheme = () => {
-    setTheme("system")
-    localStorage.setItem("diclass_theme", "system")
-  }
-
   const value = {
     theme,
     setTheme: (theme: Theme) => {
       setTheme(theme)
     },
-    resetTheme,
   }
 
   // Evitar el parpadeo durante la hidratación

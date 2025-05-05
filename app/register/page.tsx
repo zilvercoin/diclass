@@ -10,11 +10,12 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { GraduationCap } from "lucide-react"
+import { useToast } from "@/components/ui/use-toast"
 import { registerUser, getUserByEmail } from "@/lib/auth"
-import { ThemeSwitcher } from "@/components/theme-switcher"
 
 export default function RegisterPage() {
   const router = useRouter()
+  const { toast } = useToast()
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -74,13 +75,15 @@ export default function RegisterPage() {
       // Guardar información de sesión
       localStorage.setItem("diclass_user", JSON.stringify(newUser))
 
-      // Mostrar mensaje de éxito
-      alert("Registro exitoso. Tu cuenta ha sido creada correctamente")
+      toast({
+        title: "Registro exitoso",
+        description: "Tu cuenta ha sido creada correctamente",
+      })
 
       // Redireccionar al dashboard
       setTimeout(() => {
         router.push("/dashboard")
-      }, 500)
+      }, 1000)
     } catch (err) {
       setError("Error al crear la cuenta. Inténtalo de nuevo.")
       setLoading(false)
@@ -89,13 +92,6 @@ export default function RegisterPage() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <div className="flex items-center justify-between px-6 py-4 border-b">
-        <Link href="/" className="flex items-center gap-2">
-          <GraduationCap className="h-8 w-8 text-rose-600" />
-          <h1 className="text-3xl font-black tracking-tighter">DiClass</h1>
-        </Link>
-        <ThemeSwitcher />
-      </div>
       <div className="flex flex-1 flex-col justify-center px-6 py-12">
         <div className="mx-auto w-full max-w-md">
           <div className="flex flex-col items-center space-y-2 text-center">
@@ -103,14 +99,12 @@ export default function RegisterPage() {
               <GraduationCap className="h-12 w-12 text-rose-600" />
             </Link>
             <h1 className="text-4xl font-black tracking-tighter text-rose-600">DiClass</h1>
-            <p className="text-gray-600 dark:text-gray-400">Crea tu cuenta para comenzar</p>
+            <p className="text-gray-600">Crea tu cuenta para comenzar</p>
           </div>
           <div className="mt-8">
-            <div className="bg-white dark:bg-card p-6 shadow-lg rounded-lg">
+            <div className="bg-white p-6 shadow-lg rounded-lg">
               {error && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-md text-sm dark:bg-red-900/20 dark:border-red-800 dark:text-red-400">
-                  {error}
-                </div>
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-md text-sm">{error}</div>
               )}
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-2">
@@ -176,7 +170,7 @@ export default function RegisterPage() {
               </form>
             </div>
             <div className="mt-6 text-center">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-gray-600">
                 ¿Ya tienes una cuenta?{" "}
                 <Link href="/login" className="text-rose-600 hover:underline">
                   Inicia sesión

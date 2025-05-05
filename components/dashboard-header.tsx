@@ -12,14 +12,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
 import { GraduationCap, Bell, Settings, LogOut, User, Check } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { getCurrentUser, logout } from "@/lib/auth"
@@ -32,16 +24,13 @@ import {
   type Notification,
 } from "@/lib/notifications"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { useTheme } from "@/components/theme-provider"
 
 export function DashboardHeader() {
   const router = useRouter()
-  const { resetTheme } = useTheme()
   const [user, setUser] = useState<UserType | null>(null)
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
-  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false)
 
   useEffect(() => {
     // Verificar si el usuario está autenticado
@@ -98,16 +87,7 @@ export function DashboardHeader() {
   }
 
   const handleLogout = () => {
-    // Resetear el tema al cerrar sesión
-    resetTheme()
-
-    // Cerrar sesión
     logout()
-
-    // Mostrar mensaje de éxito
-    alert("Has cerrado sesión correctamente")
-
-    // Redirigir al inicio
     router.push("/login")
   }
 
@@ -193,7 +173,7 @@ export function DashboardHeader() {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => setLogoutDialogOpen(true)}>
+                <DropdownMenuItem onClick={handleLogout}>
                   <LogOut className="mr-2 h-4 w-4" /> Cerrar Sesión
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -201,24 +181,6 @@ export function DashboardHeader() {
           </nav>
         </div>
       </div>
-
-      {/* Diálogo de confirmación para cerrar sesión */}
-      <Dialog open={logoutDialogOpen} onOpenChange={setLogoutDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Cerrar sesión</DialogTitle>
-            <DialogDescription>¿Estás seguro de que quieres cerrar sesión?</DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setLogoutDialogOpen(false)}>
-              Cancelar
-            </Button>
-            <Button className="bg-rose-600 hover:bg-rose-700" onClick={handleLogout}>
-              Cerrar sesión
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </header>
   )
 }

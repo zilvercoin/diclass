@@ -9,11 +9,12 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { GraduationCap } from "lucide-react"
+import { useToast } from "@/components/ui/use-toast"
 import { authenticateUser, getUserByEmail } from "@/lib/auth"
-import { ThemeSwitcher } from "@/components/theme-switcher"
 
 export default function LoginPage() {
   const router = useRouter()
+  const { toast } = useToast()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
@@ -53,13 +54,15 @@ export default function LoginPage() {
       // Guardar información de sesión
       localStorage.setItem("diclass_user", JSON.stringify(authenticatedUser))
 
-      // Mostrar mensaje de éxito
-      alert("Inicio de sesión exitoso. Bienvenido a DiClass")
+      toast({
+        title: "Inicio de sesión exitoso",
+        description: "Bienvenido a DiClass",
+      })
 
       // Redireccionar al dashboard
       setTimeout(() => {
         router.push("/dashboard")
-      }, 500)
+      }, 1000)
     } catch (err) {
       setError("Error al iniciar sesión. Inténtalo de nuevo.")
       setLoading(false)
@@ -68,13 +71,6 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <div className="flex items-center justify-between px-6 py-4 border-b">
-        <Link href="/" className="flex items-center gap-2">
-          <GraduationCap className="h-8 w-8 text-rose-600" />
-          <h1 className="text-3xl font-black tracking-tighter">DiClass</h1>
-        </Link>
-        <ThemeSwitcher />
-      </div>
       <div className="flex flex-1 flex-col justify-center px-6 py-12">
         <div className="mx-auto w-full max-w-md">
           <div className="flex flex-col items-center space-y-2 text-center">
@@ -82,14 +78,12 @@ export default function LoginPage() {
               <GraduationCap className="h-12 w-12 text-rose-600" />
             </Link>
             <h1 className="text-4xl font-black tracking-tighter text-rose-600">DiClass</h1>
-            <p className="text-gray-600 dark:text-gray-400">Inicia sesión para continuar</p>
+            <p className="text-gray-600">Inicia sesión para continuar</p>
           </div>
           <div className="mt-8">
-            <div className="bg-white dark:bg-card p-6 shadow-lg rounded-lg">
+            <div className="bg-white p-6 shadow-lg rounded-lg">
               {error && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-md text-sm dark:bg-red-900/20 dark:border-red-800 dark:text-red-400">
-                  {error}
-                </div>
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-md text-sm">{error}</div>
               )}
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-2">
@@ -122,13 +116,13 @@ export default function LoginPage() {
                 <Button type="submit" className="w-full bg-rose-600 hover:bg-rose-700" disabled={loading}>
                   {loading ? "Iniciando sesión..." : "Iniciar Sesión"}
                 </Button>
-                <div className="text-xs text-gray-500 mt-2 dark:text-gray-400">
+                <div className="text-xs text-gray-500 mt-2">
                   Sugerencia: Regístrate primero para crear una cuenta con contraseña segura
                 </div>
               </form>
             </div>
             <div className="mt-6 text-center">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-gray-600">
                 ¿No tienes una cuenta?{" "}
                 <Link href="/register" className="text-rose-600 hover:underline">
                   Regístrate

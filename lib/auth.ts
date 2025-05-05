@@ -8,7 +8,6 @@ export type User = {
   role: "student" | "teacher"
   avatar?: string
   password: string // Almacenamos la contraseña para validación (en una app real esto sería hash)
-  theme?: "light" | "dark" | "system"
 }
 
 // Base de datos simulada de usuarios
@@ -73,11 +72,8 @@ export function isAuthenticated(): boolean {
 // Función para cerrar sesión
 export function logout(): void {
   if (typeof window === "undefined") return
-
-  // Eliminar la información del usuario de localStorage
   localStorage.removeItem("diclass_user")
-
-  // No redirigimos aquí para permitir confirmación
+  window.location.href = "/login"
 }
 
 // Función para actualizar datos del usuario

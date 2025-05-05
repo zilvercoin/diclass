@@ -16,104 +16,33 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Plus, Clock, Users } from "lucide-react"
+import { Plus, Clock, Users, PlusCircle } from "lucide-react"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { DashboardShell } from "@/components/dashboard-shell"
 import { useRouter } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth"
 import { useToast } from "@/components/ui/use-toast"
-
-// Datos simulados para clases
-const initialClasses = [
-  {
-    id: "1",
-    title: "Matemáticas Avanzadas",
-    teacher: "Prof. García",
-    color: "bg-blue-100",
-    students: 24,
-    type: "enrolled",
-  },
-  {
-    id: "2",
-    title: "Historia Contemporánea",
-    teacher: "Prof. Rodríguez",
-    color: "bg-green-100",
-    students: 18,
-    type: "enrolled",
-  },
-  {
-    id: "3",
-    title: "Física Cuántica",
-    teacher: "Prof. Martínez",
-    color: "bg-purple-100",
-    students: 15,
-    type: "enrolled",
-  },
-  {
-    id: "4",
-    title: "Literatura Universal",
-    teacher: "Prof. López",
-    color: "bg-yellow-100",
-    students: 22,
-    type: "enrolled",
-  },
-  {
-    id: "5",
-    title: "Programación Avanzada",
-    teacher: "Tú",
-    color: "bg-rose-100",
-    students: 20,
-    type: "teaching",
-  },
-  {
-    id: "6",
-    title: "Diseño Web",
-    teacher: "Tú",
-    color: "bg-indigo-100",
-    students: 16,
-    type: "teaching",
-  },
-  {
-    id: "7",
-    title: "Álgebra Lineal",
-    teacher: "Prof. Sánchez",
-    color: "bg-gray-100",
-    students: 30,
-    type: "archived",
-  },
-]
-
-// Datos simulados para tareas
-const initialAssignments = [
-  {
-    id: "1",
-    title: "Ensayo sobre la Segunda Guerra Mundial",
-    className: "Historia Contemporánea",
-    dueDate: "15 de mayo, 2024",
-  },
-  {
-    id: "2",
-    title: "Problemas de Ecuaciones Diferenciales",
-    className: "Matemáticas Avanzadas",
-    dueDate: "18 de mayo, 2024",
-  },
-  {
-    id: "3",
-    title: "Proyecto Final de Programación",
-    className: "Programación Avanzada",
-    dueDate: "25 de mayo, 2024",
-  },
-]
+import { generateClassCode } from "@/lib/utils"
+import {
+  createClass,
+  getClassByCode,
+  getStudentClasses,
+  getTeacherClasses,
+  enrollStudentInClass,
+  getAssignmentsByClassId,
+} from "@/lib/class"
 
 export default function DashboardPage() {
   const router = useRouter()
   const { toast } = useToast()
-  const [open, setOpen] = useState(false)
+  const [createOpen, setCreateOpen] = useState(false)
+  const [joinOpen, setJoinOpen] = useState(false)
   const [className, setClassName] = useState("")
   const [section, setSection] = useState("")
   const [subject, setSubject] = useState("")
-  const [classes, setClasses] = useState(initialClasses)
-  const [assignments, setAssignments] = useState(initialAssignments)
+  const [classCode, setClassCode] = useState("")
+  const [classes, setClasses] = useState<any[]>([])
+  const [assignments, setAssignments] = useState<any[]>([])
   const [user, setUser] = useState<any>(null)
 
   useEffect(() => {
@@ -126,16 +55,24 @@ export default function DashboardPage() {
 
     setUser(currentUser)
 
-    // Cargar datos guardados en localStorage si existen
-    const savedClasses = localStorage.getItem("diclass_classes")
-    if (savedClasses) {
-      setClasses(JSON.parse(savedClasses))
+    // Cargar clases según el rol del usuario
+    if (currentUser.role === "teacher") {
+      setClasses(getTeacherClasses(currentUser.id))
+    } else {
+      setClasses(getStudentClasses(currentUser.id))
     }
 
-    const savedAssignments = localStorage.getItem("diclass_assignments")
-    if (savedAssignments) {
-      setAssignments(JSON.parse(savedAssignments))
-    }
+    // Cargar tareas para el usuario
+    const userClasses =
+      currentUser.role === "teacher" ? getTeacherClasses(currentUser.id) : getStudentClasses(currentUser.id)
+
+    let allAssignments: any[] = []
+    userClasses.forEach((cls) => {
+      const classAssignments = getAssignmentsByClassId(cls.id)
+      allAssignments = [...allAssignments, ...classAssignments]
+    })
+
+    setAssignments(allAssignments)
   }, [router])
 
   const handleCreateClass = () => {
@@ -147,22 +84,22 @@ export default function DashboardPage() {
       return
     }
 
+    // Generar código único para la clase
+    const code = generateClassCode()
+
     // Crear nueva clase
-    const newClass = {
-      id: Date.now().toString(),
+    const newClass = createClass({
       title: className,
-      teacher: user?.role === "teacher" ? "Tú" : "Prof. " + user?.name.split(" ")[0],
+      section: section,
+      subject: subject,
+      teacherId: user.id,
+      teacherName: user.name,
       color: `bg-${["blue", "green", "purple", "yellow", "rose", "indigo"][Math.floor(Math.random() * 6)]}-100`,
-      students: Math.floor(Math.random() * 20) + 5,
-      type: user?.role === "teacher" ? "teaching" : "enrolled",
-    }
+      code: code,
+    })
 
     // Actualizar estado
-    const updatedClasses = [...classes, newClass]
-    setClasses(updatedClasses)
-
-    // Guardar en localStorage
-    localStorage.setItem("diclass_classes", JSON.stringify(updatedClasses))
+    setClasses([...classes, newClass])
 
     // Mostrar notificación
     toast({
@@ -171,11 +108,60 @@ export default function DashboardPage() {
     })
 
     // Cerrar diálogo y limpiar campos
-    setOpen(false)
+    setCreateOpen(false)
     setClassName("")
     setSection("")
     setSubject("")
   }
+
+  const handleJoinClass = () => {
+    if (!classCode.trim()) {
+      toast({
+        title: "Error",
+        description: "Por favor, ingresa un código de clase",
+      })
+      return
+    }
+
+    // Buscar la clase con el código proporcionado
+    const classToJoin = getClassByCode(classCode.trim())
+
+    if (!classToJoin) {
+      toast({
+        title: "Error",
+        description: "No se encontró ninguna clase con ese código",
+      })
+      return
+    }
+
+    // Inscribir al estudiante en la clase
+    const enrollment = enrollStudentInClass(classToJoin.id, user.id)
+
+    if (!enrollment) {
+      toast({
+        title: "Error",
+        description: "Ya estás inscrito en esta clase o hubo un problema al unirte",
+      })
+      return
+    }
+
+    // Actualizar estado
+    setClasses([...classes, classToJoin])
+
+    // Mostrar notificación
+    toast({
+      title: "Te has unido a la clase",
+      description: `Te has unido exitosamente a "${classToJoin.title}"`,
+    })
+
+    // Cerrar diálogo y limpiar campos
+    setJoinOpen(false)
+    setClassCode("")
+  }
+
+  // Filtrar clases según el rol del usuario
+  const enrolledClasses = classes.filter((c) => !c.archived)
+  const archivedClasses = classes.filter((c) => c.archived)
 
   if (!user) return null
 
@@ -183,130 +169,194 @@ export default function DashboardPage() {
     <div className="flex min-h-screen flex-col">
       <DashboardHeader />
       <DashboardShell>
-        <Tabs defaultValue="enrolled" className="w-full">
+        <Tabs defaultValue={user?.role === "teacher" ? "teaching" : "enrolled"} className="w-full">
           <div className="flex items-center justify-between">
             <TabsList>
-              <TabsTrigger value="enrolled">Mis Clases</TabsTrigger>
-              <TabsTrigger value="teaching">Impartiendo</TabsTrigger>
+              {user?.role === "student" && <TabsTrigger value="enrolled">Mis Clases</TabsTrigger>}
+              {user?.role === "teacher" && <TabsTrigger value="teaching">Impartiendo</TabsTrigger>}
               <TabsTrigger value="archived">Archivadas</TabsTrigger>
             </TabsList>
-            <Dialog open={open} onOpenChange={setOpen}>
-              <DialogTrigger asChild>
-                <Button className="bg-rose-600 hover:bg-rose-700">
-                  <Plus className="mr-2 h-4 w-4" /> Crear Clase
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Crear una nueva clase</DialogTitle>
-                  <DialogDescription>Completa los detalles para crear una nueva clase.</DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="name">Nombre de la clase</Label>
-                    <Input
-                      id="name"
-                      value={className}
-                      onChange={(e) => setClassName(e.target.value)}
-                      placeholder="Ej. Matemáticas Avanzadas"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="section">Sección</Label>
-                    <Input
-                      id="section"
-                      value={section}
-                      onChange={(e) => setSection(e.target.value)}
-                      placeholder="Ej. Periodo 3"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="subject">Asignatura</Label>
-                    <Input
-                      id="subject"
-                      value={subject}
-                      onChange={(e) => setSubject(e.target.value)}
-                      placeholder="Ej. Matemáticas"
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setOpen(false)}>
-                    Cancelar
-                  </Button>
-                  <Button className="bg-rose-600 hover:bg-rose-700" onClick={handleCreateClass}>
-                    Crear
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+            <div className="flex gap-2">
+              {user?.role === "student" && (
+                <Dialog open={joinOpen} onOpenChange={setJoinOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline">
+                      <PlusCircle className="mr-2 h-4 w-4" /> Unirse a una clase
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Unirse a una clase</DialogTitle>
+                      <DialogDescription>
+                        Ingresa el código de la clase proporcionado por tu profesor.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="classCode">Código de la clase</Label>
+                        <Input
+                          id="classCode"
+                          value={classCode}
+                          onChange={(e) => setClassCode(e.target.value)}
+                          placeholder="Ej. ABC123XYZ"
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setJoinOpen(false)}>
+                        Cancelar
+                      </Button>
+                      <Button className="bg-rose-600 hover:bg-rose-700" onClick={handleJoinClass}>
+                        Unirse
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              )}
+              {user?.role === "teacher" && (
+                <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+                  <DialogTrigger asChild>
+                    <Button className="bg-rose-600 hover:bg-rose-700">
+                      <Plus className="mr-2 h-4 w-4" /> Crear Clase
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Crear una nueva clase</DialogTitle>
+                      <DialogDescription>Completa los detalles para crear una nueva clase.</DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="name">Nombre de la clase</Label>
+                        <Input
+                          id="name"
+                          value={className}
+                          onChange={(e) => setClassName(e.target.value)}
+                          placeholder="Ej. Matemáticas Avanzadas"
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="section">Sección</Label>
+                        <Input
+                          id="section"
+                          value={section}
+                          onChange={(e) => setSection(e.target.value)}
+                          placeholder="Ej. Periodo 3"
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="subject">Asignatura</Label>
+                        <Input
+                          id="subject"
+                          value={subject}
+                          onChange={(e) => setSubject(e.target.value)}
+                          placeholder="Ej. Matemáticas"
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setCreateOpen(false)}>
+                        Cancelar
+                      </Button>
+                      <Button className="bg-rose-600 hover:bg-rose-700" onClick={handleCreateClass}>
+                        Crear
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              )}
+            </div>
           </div>
-          <TabsContent value="enrolled" className="mt-6">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {classes
-                .filter((c) => c.type === "enrolled")
-                .map((classItem) => (
-                  <ClassCard
-                    key={classItem.id}
-                    title={classItem.title}
-                    teacher={classItem.teacher}
-                    image="/placeholder.svg?height=200&width=400"
-                    color={classItem.color}
-                    students={classItem.students}
-                    href={`/class/${classItem.id}`}
-                  />
-                ))}
-            </div>
-          </TabsContent>
-          <TabsContent value="teaching" className="mt-6">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {classes
-                .filter((c) => c.type === "teaching")
-                .map((classItem) => (
-                  <ClassCard
-                    key={classItem.id}
-                    title={classItem.title}
-                    teacher={classItem.teacher}
-                    image="/placeholder.svg?height=200&width=400"
-                    color={classItem.color}
-                    students={classItem.students}
-                    href={`/class/${classItem.id}`}
-                  />
-                ))}
-            </div>
-          </TabsContent>
+          {user?.role === "student" && (
+            <TabsContent value="enrolled" className="mt-6">
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {enrolledClasses.length > 0 ? (
+                  enrolledClasses.map((classItem) => (
+                    <ClassCard
+                      key={classItem.id}
+                      title={classItem.title}
+                      teacher={classItem.teacherName}
+                      image="/placeholder.svg?height=200&width=400"
+                      color={classItem.color}
+                      students={classItem.students}
+                      href={`/class/${classItem.id}`}
+                    />
+                  ))
+                ) : (
+                  <div className="col-span-full text-center py-10">
+                    <p className="text-gray-500 mb-4">No estás inscrito en ninguna clase</p>
+                    <Button variant="outline" onClick={() => setJoinOpen(true)} className="mx-auto">
+                      <PlusCircle className="mr-2 h-4 w-4" /> Unirse a una clase
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+          )}
+          {user?.role === "teacher" && (
+            <TabsContent value="teaching" className="mt-6">
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {enrolledClasses.length > 0 ? (
+                  enrolledClasses.map((classItem) => (
+                    <ClassCard
+                      key={classItem.id}
+                      title={classItem.title}
+                      teacher="Tú"
+                      image="/placeholder.svg?height=200&width=400"
+                      color={classItem.color}
+                      students={classItem.students}
+                      href={`/class/${classItem.id}`}
+                    />
+                  ))
+                ) : (
+                  <div className="col-span-full text-center py-10">
+                    <p className="text-gray-500 mb-4">No estás impartiendo ninguna clase</p>
+                    <Button variant="outline" onClick={() => setCreateOpen(true)} className="mx-auto">
+                      <Plus className="mr-2 h-4 w-4" /> Crear una clase
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+          )}
           <TabsContent value="archived" className="mt-6">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {classes
-                .filter((c) => c.type === "archived")
-                .map((classItem) => (
+              {archivedClasses.length > 0 ? (
+                archivedClasses.map((classItem) => (
                   <ClassCard
                     key={classItem.id}
                     title={classItem.title}
-                    teacher={classItem.teacher}
+                    teacher={classItem.teacherName}
                     image="/placeholder.svg?height=200&width=400"
                     color={classItem.color}
                     students={classItem.students}
                     href={`/class/${classItem.id}`}
                   />
-                ))}
+                ))
+              ) : (
+                <div className="col-span-full text-center py-10">
+                  <p className="text-gray-500">No tienes clases archivadas</p>
+                </div>
+              )}
             </div>
           </TabsContent>
         </Tabs>
-        <div className="mt-8">
-          <h2 className="text-2xl font-bold mb-4">Próximas Entregas</h2>
-          <div className="space-y-4">
-            {assignments.map((assignment) => (
-              <AssignmentCard
-                key={assignment.id}
-                title={assignment.title}
-                className={assignment.className}
-                dueDate={assignment.dueDate}
-                href={`/assignment/${assignment.id}`}
-              />
-            ))}
+        {assignments.length > 0 && (
+          <div className="mt-8">
+            <h2 className="text-2xl font-bold mb-4">Próximas Entregas</h2>
+            <div className="space-y-4">
+              {assignments.map((assignment) => (
+                <AssignmentCard
+                  key={assignment.id}
+                  title={assignment.title}
+                  className={assignment.className || ""}
+                  dueDate={assignment.dueDate}
+                  href={`/assignment/${assignment.id}`}
+                />
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </DashboardShell>
     </div>
   )

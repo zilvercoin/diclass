@@ -6,12 +6,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { DashboardShell } from "@/components/dashboard-shell"
 import { useRouter } from "next/navigation"
-import { getCurrentUser, updateUserData } from "@/lib/auth"
+import { getCurrentUser, updateUserData, getUserActivities } from "@/lib/auth"
 import { useToast } from "@/components/ui/use-toast"
+import { ImageUpload } from "@/components/image-upload"
 
 export default function ProfilePage() {
   const router = useRouter()
@@ -20,7 +20,9 @@ export default function ProfilePage() {
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [bio, setBio] = useState("")
+  const [avatar, setAvatar] = useState("")
   const [saving, setSaving] = useState(false)
+  const [activities, setActivities] = useState<any[]>([])
 
   useEffect(() => {
     // Verificar si el usuario está autenticado
@@ -34,6 +36,11 @@ export default function ProfilePage() {
     setName(currentUser.name || "")
     setEmail(currentUser.email || "")
     setBio(currentUser.bio || "")
+    setAvatar(currentUser.avatar || "")
+
+    // Cargar actividades recientes
+    const userActivities = getUserActivities(currentUser.id)
+    setActivities(userActivities)
   }, [router])
 
   const handleSaveProfile = () => {
@@ -47,31 +54,38 @@ export default function ProfilePage() {
 
     setSaving(true)
 
-    // Simular retraso de red
-    setTimeout(() => {
-      // Actualizar datos del usuario
-      updateUserData({
-        name,
-        email,
-        bio,
-      })
+    // Actualizar datos del usuario
+    updateUserData({
+      name,
+      email,
+      bio,
+      avatar,
+    })
 
-      // Actualizar estado local
-      setUser({
-        ...user,
-        name,
-        email,
-        bio,
-      })
+    // Actualizar estado local
+    setUser({
+      ...user,
+      name,
+      email,
+      bio,
+      avatar,
+    })
 
-      // Mostrar notificación
-      toast({
-        title: "Perfil actualizado",
-        description: "Tu perfil ha sido actualizado exitosamente",
-      })
+    // Mostrar notificación
+    toast({
+      title: "Perfil actualizado",
+      description: "Tu perfil ha sido actualizado exitosamente",
+    })
 
-      setSaving(false)
-    }, 1000)
+    setSaving(false)
+  }
+
+  const handleImageChange = (imageDataUrl: string) => {
+    setAvatar(imageDataUrl)
+  }
+
+  const navigateToSettings = () => {
+    router.push("/settings")
   }
 
   if (!user) return null
@@ -89,16 +103,10 @@ export default function ProfilePage() {
                   <CardDescription>Gestiona tu información personal</CardDescription>
                 </CardHeader>
                 <CardContent className="flex flex-col items-center">
-                  <Avatar className="h-24 w-24 mb-4">
-                    <AvatarImage src={user.avatar || "/placeholder.svg?height=96&width=96"} alt={user.name} />
-                    <AvatarFallback className="text-2xl">{user.name.substring(0, 2).toUpperCase()}</AvatarFallback>
-                  </Avatar>
+                  <ImageUpload currentImage={avatar} onImageChange={handleImageChange} size="lg" className="mb-4" />
                   <h2 className="text-xl font-bold">{user.name}</h2>
                   <p className="text-gray-500">{user.email}</p>
                   <p className="text-sm mt-2 text-gray-600">{user.role === "teacher" ? "Profesor" : "Estudiante"}</p>
-                  <Button variant="outline" className="mt-4">
-                    Cambiar foto
-                  </Button>
                 </CardContent>
               </Card>
             </div>
@@ -182,14 +190,18 @@ export default function ProfilePage() {
                             <h3 className="font-medium">Notificaciones por correo</h3>
                             <p className="text-sm text-gray-500">Recibe notificaciones por correo electrónico</p>
                           </div>
-                          <Button variant="outline">Configurar</Button>
+                          <Button variant="outline" onClick={navigateToSettings}>
+                            Configurar
+                          </Button>
                         </div>
                         <div className="flex items-center justify-between">
                           <div>
                             <h3 className="font-medium">Notificaciones en la plataforma</h3>
                             <p className="text-sm text-gray-500">Configura las notificaciones dentro de DiClass</p>
                           </div>
-                          <Button variant="outline">Configurar</Button>
+                          <Button variant="outline" onClick={navigateToSettings}>
+                            Configurar
+                          </Button>
                         </div>
                       </div>
                     </TabsContent>
@@ -206,27 +218,27 @@ export default function ProfilePage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="flex items-center gap-4 p-3 border rounded-lg">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  <div>
-                    <p className="font-medium">Comentaste en "Problemas de Ecuaciones Diferenciales"</p>
-                    <p className="text-sm text-gray-500">Hace 2 horas</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4 p-3 border rounded-lg">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <div>
-                    <p className="font-medium">Te uniste a la clase "Física Cuántica"</p>
-                    <p className="text-sm text-gray-500">Hace 1 día</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4 p-3 border rounded-lg">
-                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                  <div>
-                    <p className="font-medium">Entregaste "Ensayo sobre la Segunda Guerra Mundial"</p>
-                    <p className="text-sm text-gray-500">Hace 3 días</p>
-                  </div>
-                </div>
+                {activities.length > 0 ? (
+                  activities.map((activity) => (
+                    <div key={activity.id} className="flex items-center gap-4 p-3 border rounded-lg">
+                      <div className={`w-2 h-2 rounded-full ${getActivityColor(activity.type)}`}></div>
+                      <div>
+                        <p className="font-medium">{activity.description}</p>
+                        <p className="text-sm text-gray-500">
+                          {new Date(activity.timestamp).toLocaleDateString("es-ES", {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-center text-gray-500">No hay actividad reciente</p>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -234,4 +246,22 @@ export default function ProfilePage() {
       </DashboardShell>
     </div>
   )
+}
+
+// Función para determinar el color según el tipo de actividad
+function getActivityColor(type: string): string {
+  switch (type) {
+    case "comment":
+      return "bg-blue-500"
+    case "submission":
+      return "bg-green-500"
+    case "enrollment":
+      return "bg-purple-500"
+    case "creation":
+      return "bg-yellow-500"
+    case "grade":
+      return "bg-rose-500"
+    default:
+      return "bg-gray-500"
+  }
 }

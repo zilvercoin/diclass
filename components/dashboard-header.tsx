@@ -12,14 +12,36 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { GraduationCap, Bell, Settings, LogOut, User } from "lucide-react"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { GraduationCap, Bell, Settings, LogOut, User, Check } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { getCurrentUser, logout } from "@/lib/auth"
 import type { User as UserType } from "@/lib/auth"
+import {
+  getUserNotifications,
+  getUnreadNotifications,
+  markAllNotificationsAsRead,
+  markNotificationAsRead,
+  type Notification,
+} from "@/lib/notifications"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { useTheme } from "@/components/theme-provider"
 
 export function DashboardHeader() {
   const router = useRouter()
+  const { resetTheme } = useTheme()
   const [user, setUser] = useState<UserType | null>(null)
+  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [unreadCount, setUnreadCount] = useState(0)
+  const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false)
 
   useEffect(() => {
     // Verificar si el usuario está autenticado
@@ -30,10 +52,62 @@ export function DashboardHeader() {
     }
 
     setUser(currentUser)
+
+    // Cargar notificaciones
+    loadNotifications(currentUser.id)
+
+    // Configurar intervalo para actualizar notificaciones
+    const interval = setInterval(() => {
+      loadNotifications(currentUser.id)
+    }, 30000) // Actualizar cada 30 segundos
+
+    return () => clearInterval(interval)
   }, [router])
 
+  const loadNotifications = (userId: string) => {
+    const userNotifications = getUserNotifications(userId)
+    setNotifications(userNotifications)
+
+    const unread = getUnreadNotifications(userId)
+    setUnreadCount(unread.length)
+  }
+
+  const handleNotificationClick = (notification: Notification) => {
+    // Marcar como leída
+    markNotificationAsRead(notification.id)
+
+    // Actualizar estado local
+    setNotifications((prev) => prev.map((n) => (n.id === notification.id ? { ...n, read: true } : n)))
+    setUnreadCount((prev) => (prev > 0 ? prev - 1 : 0))
+
+    // Navegar al enlace si existe
+    if (notification.link) {
+      router.push(notification.link)
+    }
+
+    // Cerrar menú de notificaciones
+    setNotificationsOpen(false)
+  }
+
+  const handleMarkAllAsRead = () => {
+    markAllNotificationsAsRead(user?.id || "")
+
+    // Actualizar estado local
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
+    setUnreadCount(0)
+  }
+
   const handleLogout = () => {
+    // Resetear el tema al cerrar sesión
+    resetTheme()
+
+    // Cerrar sesión
     logout()
+
+    // Mostrar mensaje de éxito
+    alert("Has cerrado sesión correctamente")
+
+    // Redirigir al inicio
     router.push("/login")
   }
 
@@ -48,28 +122,52 @@ export function DashboardHeader() {
         </Link>
         <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
           <nav className="flex items-center">
-            <DropdownMenu>
+            <DropdownMenu open={notificationsOpen} onOpenChange={setNotificationsOpen}>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" className="relative">
                   <Bell className="h-5 w-5" />
+                  {unreadCount > 0 && (
+                    <span className="notification-badge">{unreadCount > 9 ? "9+" : unreadCount}</span>
+                  )}
                   <span className="sr-only">Notificaciones</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Notificaciones</DropdownMenuLabel>
+              <DropdownMenuContent align="end" className="w-80">
+                <div className="flex items-center justify-between p-2">
+                  <DropdownMenuLabel>Notificaciones</DropdownMenuLabel>
+                  {unreadCount > 0 && (
+                    <Button variant="ghost" size="sm" onClick={handleMarkAllAsRead} className="text-xs h-8">
+                      <Check className="h-3 w-3 mr-1" /> Marcar todas como leídas
+                    </Button>
+                  )}
+                </div>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <div className="flex flex-col">
-                    <span>Nueva tarea asignada</span>
-                    <span className="text-xs text-gray-500">Hace 2 horas</span>
-                  </div>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <div className="flex flex-col">
-                    <span>Comentario en tu entrega</span>
-                    <span className="text-xs text-gray-500">Hace 1 día</span>
-                  </div>
-                </DropdownMenuItem>
+                <ScrollArea className="h-[300px]">
+                  {notifications.length > 0 ? (
+                    notifications.map((notification) => (
+                      <DropdownMenuItem
+                        key={notification.id}
+                        className={`p-3 cursor-pointer notification-item ${!notification.read ? "unread" : ""}`}
+                        onClick={() => handleNotificationClick(notification)}
+                      >
+                        <div className="flex flex-col">
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium text-sm">{notification.title}</span>
+                            <span className="text-xs text-gray-500">
+                              {new Date(notification.createdAt).toLocaleDateString("es-ES", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </span>
+                          </div>
+                          <span className="text-xs mt-1">{notification.message}</span>
+                        </div>
+                      </DropdownMenuItem>
+                    ))
+                  ) : (
+                    <div className="p-4 text-center text-sm text-gray-500">No tienes notificaciones</div>
+                  )}
+                </ScrollArea>
               </DropdownMenuContent>
             </DropdownMenu>
             <DropdownMenu>
@@ -95,7 +193,7 @@ export function DashboardHeader() {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout}>
+                <DropdownMenuItem onClick={() => setLogoutDialogOpen(true)}>
                   <LogOut className="mr-2 h-4 w-4" /> Cerrar Sesión
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -103,6 +201,24 @@ export function DashboardHeader() {
           </nav>
         </div>
       </div>
+
+      {/* Diálogo de confirmación para cerrar sesión */}
+      <Dialog open={logoutDialogOpen} onOpenChange={setLogoutDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Cerrar sesión</DialogTitle>
+            <DialogDescription>¿Estás seguro de que quieres cerrar sesión?</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setLogoutDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button className="bg-rose-600 hover:bg-rose-700" onClick={handleLogout}>
+              Cerrar sesión
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </header>
   )
 }

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/tabs"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Dialog,
@@ -18,179 +18,25 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { BookOpen, Calendar, Clock, FileText, MessageSquare, Plus, Users, Upload } from "lucide-react"
+import { BookOpen, Calendar, Clock, FileText, MessageSquare, Plus, Users, ExternalLink } from "lucide-react"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { DashboardShell } from "@/components/dashboard-shell"
 import { useRouter } from "next/navigation"
-import { getCurrentUser } from "@/lib/auth"
+import { getCurrentUser, recordActivity } from "@/lib/auth"
 import { useToast } from "@/components/ui/use-toast"
-
-// Datos simulados para clases
-const classesData = [
-  {
-    id: "1",
-    title: "Matemáticas Avanzadas",
-    section: "Periodo 3",
-    teacher: "Prof. García",
-    description:
-      "Curso avanzado de matemáticas que cubre cálculo diferencial e integral, ecuaciones diferenciales y álgebra lineal.",
-    students: 24,
-    code: "abc123xyz",
-    color: "bg-blue-100",
-  },
-  {
-    id: "2",
-    title: "Historia Contemporánea",
-    section: "Periodo 2",
-    teacher: "Prof. Rodríguez",
-    description: "Estudio de los eventos históricos desde la Segunda Guerra Mundial hasta la actualidad.",
-    students: 18,
-    code: "def456uvw",
-    color: "bg-green-100",
-  },
-  {
-    id: "3",
-    title: "Física Cuántica",
-    section: "Periodo 1",
-    teacher: "Prof. Martínez",
-    description: "Introducción a los principios de la física cuántica y sus aplicaciones.",
-    students: 15,
-    code: "ghi789rst",
-    color: "bg-purple-100",
-  },
-  {
-    id: "4",
-    title: "Literatura Universal",
-    section: "Periodo 3",
-    teacher: "Prof. López",
-    description: "Análisis de obras literarias clásicas y contemporáneas de diferentes culturas.",
-    students: 22,
-    code: "jkl012opq",
-    color: "bg-yellow-100",
-  },
-  {
-    id: "5",
-    title: "Programación Avanzada",
-    section: "Periodo 2",
-    teacher: "Tú",
-    description: "Desarrollo de habilidades avanzadas de programación en diferentes lenguajes y paradigmas.",
-    students: 20,
-    code: "mno345hij",
-    color: "bg-rose-100",
-  },
-  {
-    id: "6",
-    title: "Diseño Web",
-    section: "Periodo 1",
-    teacher: "Tú",
-    description: "Principios y prácticas de diseño web moderno, incluyendo HTML, CSS y JavaScript.",
-    students: 16,
-    code: "pqr678klm",
-    color: "bg-indigo-100",
-  },
-  {
-    id: "7",
-    title: "Álgebra Lineal",
-    section: "Periodo 3",
-    teacher: "Prof. Sánchez",
-    description: "Estudio de vectores, matrices, transformaciones lineales y sus aplicaciones.",
-    students: 30,
-    code: "stu901nop",
-    color: "bg-gray-100",
-  },
-]
-
-// Datos simulados para tareas
-const assignmentsData = {
-  "1": [
-    {
-      id: "1",
-      title: "Problemas de Ecuaciones Diferenciales",
-      dueDate: "18 de mayo, 2024",
-      points: "100",
-      description:
-        "Resuelve los siguientes problemas de ecuaciones diferenciales. Muestra todo tu trabajo y explica tu razonamiento para cada paso.",
-    },
-    {
-      id: "2",
-      title: "Examen Parcial: Cálculo Integral",
-      dueDate: "25 de mayo, 2024",
-      points: "200",
-      description: "Examen que cubre los temas de cálculo integral vistos hasta la fecha.",
-    },
-    {
-      id: "3",
-      title: "Proyecto Final: Aplicaciones del Álgebra Lineal",
-      dueDate: "10 de junio, 2024",
-      points: "300",
-      description:
-        "Desarrolla un proyecto que demuestre la aplicación del álgebra lineal en un problema del mundo real.",
-    },
-  ],
-  "2": [
-    {
-      id: "4",
-      title: "Ensayo sobre la Segunda Guerra Mundial",
-      dueDate: "15 de mayo, 2024",
-      points: "100",
-      description: "Escribe un ensayo analizando las causas y consecuencias de la Segunda Guerra Mundial.",
-    },
-    {
-      id: "5",
-      title: "Presentación: La Guerra Fría",
-      dueDate: "22 de mayo, 2024",
-      points: "150",
-      description: "Prepara una presentación sobre un aspecto específico de la Guerra Fría.",
-    },
-  ],
-}
-
-// Datos simulados para anuncios
-const announcementsData = {
-  "1": [
-    {
-      id: "1",
-      author: "Prof. García",
-      avatar: "PG",
-      date: "Hoy",
-      content:
-        "¡Bienvenidos a la clase de Matemáticas Avanzadas! En este curso exploraremos conceptos avanzados de cálculo, álgebra lineal y ecuaciones diferenciales. Por favor, revisen el material de la primera unidad y prepárense para nuestra primera sesión.",
-    },
-    {
-      id: "2",
-      author: "Prof. García",
-      avatar: "PG",
-      date: "Ayer",
-      content:
-        "He subido los materiales de lectura para la primera unidad. Por favor, revisen los documentos y vengan preparados para la discusión en la próxima clase. Recuerden que tendremos un pequeño cuestionario sobre estos conceptos.",
-    },
-  ],
-  "2": [
-    {
-      id: "3",
-      author: "Prof. Rodríguez",
-      avatar: "PR",
-      date: "Hoy",
-      content:
-        "Bienvenidos a Historia Contemporánea. Este semestre estudiaremos los eventos más importantes desde la Segunda Guerra Mundial hasta nuestros días.",
-    },
-  ],
-}
-
-// Datos simulados para estudiantes
-const studentsData = {
-  "1": [
-    { id: "1", name: "Ana Martínez", email: "ana.martinez@diclass.edu", avatar: "AM" },
-    { id: "2", name: "Carlos López", email: "carlos.lopez@diclass.edu", avatar: "CL" },
-    { id: "3", name: "Elena Rodríguez", email: "elena.rodriguez@diclass.edu", avatar: "ER" },
-    { id: "4", name: "Juan Sánchez", email: "juan.sanchez@diclass.edu", avatar: "JS" },
-  ],
-  "2": [
-    { id: "5", name: "María González", email: "maria.gonzalez@diclass.edu", avatar: "MG" },
-    { id: "6", name: "Pedro Ramírez", email: "pedro.ramirez@diclass.edu", avatar: "PR" },
-    { id: "7", name: "Sofía Torres", email: "sofia.torres@diclass.edu", avatar: "ST" },
-  ],
-}
+import { FileUpload, type FileItem } from "@/components/file-upload"
+import { FileViewer } from "@/components/file-viewer"
+import {
+  getClassById,
+  getClassStudents,
+  getAssignmentsByClassId,
+  createAssignment,
+  getAnnouncementsByClassId,
+  createAnnouncement,
+  getSubmissionsByAssignmentId,
+  getSubmissionsByStudentId,
+} from "@/lib/class"
+import { notifyNewAssignment, notifyComment, getRemainingTime } from "@/lib/notifications"
 
 export default function ClassPage({ params }: { params: { id: string } }) {
   const router = useRouter()
@@ -199,14 +45,19 @@ export default function ClassPage({ params }: { params: { id: string } }) {
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
   const [dueDate, setDueDate] = useState("")
+  const [dueTime, setDueTime] = useState("")
   const [points, setPoints] = useState("100")
+  const [materials, setMaterials] = useState<FileItem[]>([])
   const [user, setUser] = useState<any>(null)
   const [classData, setClassData] = useState<any>(null)
   const [assignments, setAssignments] = useState<any[]>([])
   const [announcements, setAnnouncements] = useState<any[]>([])
   const [students, setStudents] = useState<any[]>([])
   const [newAnnouncement, setNewAnnouncement] = useState("")
+  const [announcementFiles, setAnnouncementFiles] = useState<FileItem[]>([])
   const [postingAnnouncement, setPostingAnnouncement] = useState(false)
+  const [studentSubmissions, setStudentSubmissions] = useState<{ [key: string]: any[] }>({})
+  const [selectedFile, setSelectedFile] = useState<FileItem | null>(null)
 
   useEffect(() => {
     // Verificar si el usuario está autenticado
@@ -218,56 +69,98 @@ export default function ClassPage({ params }: { params: { id: string } }) {
 
     setUser(currentUser)
 
-    // Buscar la clase por ID
-    const foundClass = classesData.find((c) => c.id === params.id)
-    if (!foundClass) {
+    // Cargar datos de la clase
+    const classInfo = getClassById(params.id)
+    if (!classInfo) {
+      toast({
+        title: "Error",
+        description: "No se encontró la clase",
+      })
       router.push("/dashboard")
       return
     }
 
-    setClassData(foundClass)
+    setClassData(classInfo)
 
-    // Cargar tareas, anuncios y estudiantes
-    setAssignments(assignmentsData[params.id as keyof typeof assignmentsData] || [])
-    setAnnouncements(announcementsData[params.id as keyof typeof announcementsData] || [])
-    setStudents(studentsData[params.id as keyof typeof studentsData] || [])
+    // Cargar tareas de la clase
+    const classAssignments = getAssignmentsByClassId(params.id)
+    setAssignments(classAssignments)
 
-    // Cargar datos guardados en localStorage si existen
-    const savedAssignments = localStorage.getItem(`diclass_assignments_${params.id}`)
-    if (savedAssignments) {
-      setAssignments(JSON.parse(savedAssignments))
+    // Cargar anuncios de la clase
+    const classAnnouncements = getAnnouncementsByClassId(params.id)
+    setAnnouncements(classAnnouncements)
+
+    // Cargar estudiantes de la clase
+    const classStudents = getClassStudents(classInfo.id)
+    setStudents(classStudents)
+
+    // Si es profesor, cargar todas las entregas para cada tarea
+    if (currentUser.role === "teacher") {
+      const submissionsByAssignment: { [key: string]: any[] } = {}
+
+      classAssignments.forEach((assignment) => {
+        submissionsByAssignment[assignment.id] = getSubmissionsByAssignmentId(assignment.id)
+      })
+
+      setStudentSubmissions(submissionsByAssignment)
     }
+    // Si es estudiante, cargar sus entregas
+    else if (currentUser.role === "student") {
+      const studentSubs = getSubmissionsByStudentId(currentUser.id)
 
-    const savedAnnouncements = localStorage.getItem(`diclass_announcements_${params.id}`)
-    if (savedAnnouncements) {
-      setAnnouncements(JSON.parse(savedAnnouncements))
+      // Organizar por tarea
+      const submissionsByAssignment: { [key: string]: any[] } = {}
+      studentSubs.forEach((sub) => {
+        if (!submissionsByAssignment[sub.assignmentId]) {
+          submissionsByAssignment[sub.assignmentId] = []
+        }
+        submissionsByAssignment[sub.assignmentId].push(sub)
+      })
+
+      setStudentSubmissions(submissionsByAssignment)
     }
   }, [params.id, router])
 
   const handleCreateAssignment = () => {
-    if (!title || !description || !dueDate || !points) {
+    if (!title || !description || !dueDate) {
       toast({
         title: "Error",
-        description: "Por favor, completa todos los campos",
+        description: "Por favor, completa los campos obligatorios",
       })
       return
     }
 
     // Crear nueva tarea
-    const newAssignment = {
-      id: Date.now().toString(),
+    const newAssignment = createAssignment({
+      classId: params.id,
       title,
-      dueDate,
-      points,
       description,
-    }
+      dueDate,
+      dueTime,
+      points,
+      materials: materials,
+    })
+
+    // Registrar actividad
+    recordActivity({
+      userId: user.id,
+      type: "creation",
+      referenceId: newAssignment.id,
+      referenceName: newAssignment.title,
+      description: `Creaste la tarea "${newAssignment.title}" en la clase "${classData.title}"`,
+    })
+
+    // Notificar a los estudiantes
+    notifyNewAssignment(
+      newAssignment.id,
+      newAssignment.title,
+      params.id,
+      classData.title,
+      students.map((student) => student.id),
+    )
 
     // Actualizar estado
-    const updatedAssignments = [...assignments, newAssignment]
-    setAssignments(updatedAssignments)
-
-    // Guardar en localStorage
-    localStorage.setItem(`diclass_assignments_${params.id}`, JSON.stringify(updatedAssignments))
+    setAssignments([...assignments, newAssignment])
 
     // Mostrar notificación
     toast({
@@ -280,7 +173,9 @@ export default function ClassPage({ params }: { params: { id: string } }) {
     setTitle("")
     setDescription("")
     setDueDate("")
+    setDueTime("")
     setPoints("100")
+    setMaterials([])
   }
 
   const handlePostAnnouncement = () => {
@@ -294,34 +189,78 @@ export default function ClassPage({ params }: { params: { id: string } }) {
 
     setPostingAnnouncement(true)
 
-    // Simular retraso de red
-    setTimeout(() => {
-      // Crear nuevo anuncio
-      const newAnnouncementObj = {
-        id: Date.now().toString(),
-        author: user.name,
-        avatar: user.name.substring(0, 2).toUpperCase(),
-        date: "Ahora",
-        content: newAnnouncement,
-      }
+    // Crear nuevo anuncio
+    const newAnnouncementObj = createAnnouncement({
+      classId: params.id,
+      authorId: user.id,
+      authorName: user.name,
+      authorAvatar: user.avatar || user.name.substring(0, 2).toUpperCase(),
+      content: newAnnouncement,
+      materials: announcementFiles,
+    })
 
-      // Actualizar estado
-      const updatedAnnouncements = [newAnnouncementObj, ...announcements]
-      setAnnouncements(updatedAnnouncements)
+    // Registrar actividad
+    recordActivity({
+      userId: user.id,
+      type: "creation",
+      referenceId: newAnnouncementObj.id,
+      referenceName: "Anuncio",
+      description: `Publicaste un anuncio en la clase "${classData.title}"`,
+    })
 
-      // Guardar en localStorage
-      localStorage.setItem(`diclass_announcements_${params.id}`, JSON.stringify(updatedAnnouncements))
+    // Notificar a los estudiantes
+    notifyComment(
+      "announcement",
+      params.id,
+      classData.title,
+      user.id,
+      user.name,
+      students.map((student) => student.id),
+    )
 
-      // Mostrar notificación
+    // Actualizar estado
+    setAnnouncements([newAnnouncementObj, ...announcements])
+
+    // Mostrar notificación
+    toast({
+      title: "Anuncio publicado",
+      description: "Tu anuncio ha sido publicado exitosamente",
+    })
+
+    // Limpiar campo y estado
+    setNewAnnouncement("")
+    setAnnouncementFiles([])
+    setPostingAnnouncement(false)
+  }
+
+  const copyClassCode = () => {
+    if (classData && classData.code) {
+      navigator.clipboard.writeText(classData.code)
       toast({
-        title: "Anuncio publicado",
-        description: "Tu anuncio ha sido publicado exitosamente",
+        title: "Código copiado",
+        description: "El código de la clase ha sido copiado al portapapeles",
       })
+    }
+  }
 
-      // Limpiar campo y estado
-      setNewAnnouncement("")
-      setPostingAnnouncement(false)
-    }, 1000)
+  const handleViewFile = (file: FileItem) => {
+    setSelectedFile(file)
+  }
+
+  const isTeacher = user && classData && user.id === classData.teacherId
+
+  // Función para obtener la calificación de un estudiante para una tarea
+  const getStudentGrade = (assignmentId: string, studentId: string) => {
+    const submissions = studentSubmissions[assignmentId] || []
+    const submission = submissions.find((sub) => sub.studentId === studentId)
+    return submission ? submission.grade : "-"
+  }
+
+  // Función para obtener el estado de entrega de un estudiante para una tarea
+  const getSubmissionStatus = (assignmentId: string, studentId: string) => {
+    const submissions = studentSubmissions[assignmentId] || []
+    const submission = submissions.find((sub) => sub.studentId === studentId)
+    return submission ? submission.status : "missing"
   }
 
   if (!user || !classData) return null
@@ -373,12 +312,8 @@ export default function ClassPage({ params }: { params: { id: string } }) {
                           onChange={(e) => setNewAnnouncement(e.target.value)}
                           className="min-h-[100px]"
                         />
-                        <div className="flex justify-between items-center">
-                          <div className="flex gap-2">
-                            <Button variant="outline" size="sm">
-                              <Upload className="h-4 w-4 mr-1" /> Adjuntar
-                            </Button>
-                          </div>
+                        <FileUpload onFilesChange={setAnnouncementFiles} currentFiles={announcementFiles} />
+                        <div className="flex justify-end">
                           <Button
                             onClick={handlePostAnnouncement}
                             disabled={!newAnnouncement.trim() || postingAnnouncement}
@@ -392,98 +327,189 @@ export default function ClassPage({ params }: { params: { id: string } }) {
                   </CardContent>
                 </Card>
 
-                {announcements.map((announcement) => (
-                  <Card key={announcement.id} className="mb-4">
-                    <CardHeader>
-                      <div className="flex items-center gap-4">
-                        <Avatar>
-                          <AvatarImage src="/placeholder.svg?height=40&width=40" alt={announcement.author} />
-                          <AvatarFallback>{announcement.avatar}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <CardTitle className="text-lg">{announcement.author}</CardTitle>
-                          <CardDescription>Publicado {announcement.date}</CardDescription>
+                {announcements.length > 0 ? (
+                  announcements.map((announcement) => (
+                    <Card key={announcement.id} className="mb-4">
+                      <CardHeader>
+                        <div className="flex items-center gap-4">
+                          <Avatar>
+                            <AvatarImage
+                              src={
+                                announcement.authorAvatar?.startsWith("data:")
+                                  ? announcement.authorAvatar
+                                  : "/placeholder.svg?height=40&width=40"
+                              }
+                              alt={announcement.authorName}
+                            />
+                            <AvatarFallback>{announcement.authorAvatar}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <CardTitle className="text-lg">{announcement.authorName}</CardTitle>
+                            <CardDescription>
+                              {new Date(announcement.createdAt).toLocaleDateString("es-ES", {
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </CardDescription>
+                          </div>
                         </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <p>{announcement.content}</p>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardHeader>
+                      <CardContent>
+                        <p className="whitespace-pre-line">{announcement.content}</p>
+
+                        {announcement.materials && announcement.materials.length > 0 && (
+                          <div className="mt-4 pt-4 border-t">
+                            <h4 className="text-sm font-medium mb-2">Archivos adjuntos:</h4>
+                            <div className="flex flex-wrap gap-2">
+                              {announcement.materials.map((material: FileItem) => (
+                                <div
+                                  key={material.id}
+                                  className="flex items-center p-2 border rounded-lg cursor-pointer hover:bg-accent"
+                                  onClick={() => handleViewFile(material)}
+                                >
+                                  {material.isLink ? (
+                                    <>
+                                      <ExternalLink className="h-4 w-4 mr-2 text-blue-600" />
+                                      <span className="text-sm text-blue-600">{material.name}</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <FileText className="h-4 w-4 mr-2 text-gray-500" />
+                                      <span className="text-sm">{material.name}</span>
+                                    </>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))
+                ) : (
+                  <div className="text-center py-10">
+                    <p className="text-gray-500">No hay anuncios en esta clase</p>
+                  </div>
+                )}
               </TabsContent>
 
               <TabsContent value="classwork" className="mt-6">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-xl font-bold">Tareas y Actividades</h2>
-                  <Dialog open={open} onOpenChange={setOpen}>
-                    <DialogTrigger asChild>
-                      <Button className="bg-rose-600 hover:bg-rose-700">
-                        <Plus className="mr-2 h-4 w-4" /> Crear
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Crear nueva tarea</DialogTitle>
-                        <DialogDescription>
-                          Completa los detalles para crear una nueva tarea o actividad.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="grid gap-4 py-4">
-                        <div className="grid gap-2">
-                          <Label htmlFor="title">Título</Label>
-                          <Input
-                            id="title"
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                            placeholder="Ej. Tarea de Ecuaciones Diferenciales"
-                          />
-                        </div>
-                        <div className="grid gap-2">
-                          <Label htmlFor="description">Descripción</Label>
-                          <Textarea
-                            id="description"
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                            placeholder="Instrucciones detalladas para la tarea..."
-                          />
-                        </div>
-                        <div className="grid gap-2">
-                          <Label htmlFor="dueDate">Fecha de entrega</Label>
-                          <Input
-                            id="dueDate"
-                            type="date"
-                            value={dueDate}
-                            onChange={(e) => setDueDate(e.target.value)}
-                          />
-                        </div>
-                        <div className="grid gap-2">
-                          <Label htmlFor="points">Puntos</Label>
-                          <Input id="points" type="number" value={points} onChange={(e) => setPoints(e.target.value)} />
-                        </div>
-                      </div>
-                      <DialogFooter>
-                        <Button variant="outline" onClick={() => setOpen(false)}>
-                          Cancelar
+                  {isTeacher && (
+                    <Dialog open={open} onOpenChange={setOpen}>
+                      <DialogTrigger asChild>
+                        <Button className="bg-rose-600 hover:bg-rose-700">
+                          <Plus className="mr-2 h-4 w-4" /> Crear
                         </Button>
-                        <Button className="bg-rose-600 hover:bg-rose-700" onClick={handleCreateAssignment}>
-                          Crear
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-2xl">
+                        <DialogHeader>
+                          <DialogTitle>Crear nueva tarea</DialogTitle>
+                          <DialogDescription>
+                            Completa los detalles para crear una nueva tarea o actividad.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-4">
+                          <div className="grid gap-2">
+                            <Label htmlFor="title">Título</Label>
+                            <Input
+                              id="title"
+                              value={title}
+                              onChange={(e) => setTitle(e.target.value)}
+                              placeholder="Ej. Tarea de Ecuaciones Diferenciales"
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label htmlFor="description">Descripción</Label>
+                            <Textarea
+                              id="description"
+                              value={description}
+                              onChange={(e) => setDescription(e.target.value)}
+                              placeholder="Instrucciones detalladas para la tarea..."
+                              className="min-h-[120px]"
+                            />
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid gap-2">
+                              <Label htmlFor="dueDate">Fecha de entrega</Label>
+                              <Input
+                                id="dueDate"
+                                type="date"
+                                value={dueDate}
+                                onChange={(e) => setDueDate(e.target.value)}
+                              />
+                            </div>
+                            <div className="grid gap-2">
+                              <Label htmlFor="dueTime">Hora de entrega</Label>
+                              <Input
+                                id="dueTime"
+                                type="time"
+                                value={dueTime}
+                                onChange={(e) => setDueTime(e.target.value)}
+                              />
+                            </div>
+                          </div>
+                          <div className="grid gap-2">
+                            <Label htmlFor="points">Puntos</Label>
+                            <Input
+                              id="points"
+                              type="number"
+                              value={points}
+                              onChange={(e) => setPoints(e.target.value)}
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label>Materiales</Label>
+                            <FileUpload
+                              onFilesChange={setMaterials}
+                              currentFiles={materials}
+                              acceptedTypes="image/*,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt"
+                            />
+                          </div>
+                        </div>
+                        <DialogFooter>
+                          <Button variant="outline" onClick={() => setOpen(false)}>
+                            Cancelar
+                          </Button>
+                          <Button className="bg-rose-600 hover:bg-rose-700" onClick={handleCreateAssignment}>
+                            Crear
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                  )}
                 </div>
 
                 <div className="space-y-4">
-                  {assignments.map((assignment) => (
-                    <AssignmentCard
-                      key={assignment.id}
-                      title={assignment.title}
-                      dueDate={assignment.dueDate}
-                      points={assignment.points}
-                      href={`/assignment/${assignment.id}`}
-                    />
-                  ))}
+                  {assignments.length > 0 ? (
+                    assignments.map((assignment) => (
+                      <AssignmentCard
+                        key={assignment.id}
+                        title={assignment.title}
+                        dueDate={assignment.dueDate}
+                        dueTime={assignment.dueTime}
+                        points={assignment.points}
+                        href={`/assignment/${assignment.id}`}
+                        status={user.role === "student" ? getSubmissionStatus(assignment.id, user.id) : undefined}
+                        remainingTime={
+                          user.role === "student" ? getRemainingTime(assignment.dueDate, assignment.dueTime) : undefined
+                        }
+                      />
+                    ))
+                  ) : (
+                    <div className="text-center py-10">
+                      <p className="text-gray-500">No hay tareas en esta clase</p>
+                      {isTeacher && (
+                        <Button variant="outline" onClick={() => setOpen(true)} className="mt-4">
+                          <Plus className="mr-2 h-4 w-4" /> Crear tarea
+                        </Button>
+                      )}
+                    </div>
+                  )}
                 </div>
               </TabsContent>
 
@@ -493,27 +519,28 @@ export default function ClassPage({ params }: { params: { id: string } }) {
                     <h2 className="text-xl font-bold mb-4">Profesores</h2>
                     <div className="space-y-2">
                       <PersonCard
-                        name={classData.teacher}
-                        email={`${classData.teacher.toLowerCase().replace("prof. ", "")}@diclass.edu`}
-                        avatar={classData.teacher.substring(0, 2).toUpperCase()}
+                        name={classData.teacherName}
+                        email={`${classData.teacherName.toLowerCase().replace(" ", ".")}@diclass.edu`}
+                        avatar={classData.teacherName.substring(0, 2).toUpperCase()}
                       />
                     </div>
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold mb-4">Estudiantes ({classData.students})</h2>
+                    <h2 className="text-xl font-bold mb-4">Estudiantes ({classData.students || 0})</h2>
                     <div className="space-y-2">
-                      {students.map((student) => (
-                        <PersonCard
-                          key={student.id}
-                          name={student.name}
-                          email={student.email}
-                          avatar={student.avatar}
-                        />
-                      ))}
-                      {students.length < classData.students && (
-                        <Button variant="outline" className="w-full mt-2">
-                          Ver todos los estudiantes
-                        </Button>
+                      {students.length > 0 ? (
+                        students.map((student) => (
+                          <PersonCard
+                            key={student.id}
+                            name={student.name}
+                            email={student.email}
+                            avatar={student.avatar || student.name.substring(0, 2).toUpperCase()}
+                          />
+                        ))
+                      ) : (
+                        <div className="text-center py-6">
+                          <p className="text-gray-500">No hay estudiantes en esta clase</p>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -527,30 +554,146 @@ export default function ClassPage({ params }: { params: { id: string } }) {
                     <CardDescription>Resumen de calificaciones para esta clase</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-4">
-                      <div className="border rounded-lg">
-                        <table className="w-full">
-                          <thead>
-                            <tr className="border-b">
-                              <th className="text-left p-3">Tarea</th>
-                              <th className="text-left p-3">Fecha</th>
-                              <th className="text-left p-3">Puntos</th>
-                              <th className="text-left p-3">Calificación</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {assignments.map((assignment) => (
-                              <tr key={assignment.id} className="border-b">
-                                <td className="p-3">{assignment.title}</td>
-                                <td className="p-3">{assignment.dueDate}</td>
-                                <td className="p-3">{assignment.points}</td>
-                                <td className="p-3">-</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                    {assignments.length > 0 ? (
+                      <div className="space-y-4">
+                        {isTeacher ? (
+                          // Vista de calificaciones para profesor
+                          <div className="border rounded-lg overflow-x-auto">
+                            <table className="w-full">
+                              <thead>
+                                <tr className="border-b">
+                                  <th className="text-left p-3">Estudiante</th>
+                                  {assignments.map((assignment) => (
+                                    <th key={assignment.id} className="text-left p-3">
+                                      <div className="font-medium">{assignment.title}</div>
+                                      <div className="text-xs text-gray-500">{assignment.points} pts</div>
+                                    </th>
+                                  ))}
+                                  <th className="text-left p-3">Promedio</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {students.map((student) => {
+                                  // Calcular promedio
+                                  let totalPoints = 0
+                                  let earnedPoints = 0
+                                  let gradedAssignments = 0
+
+                                  assignments.forEach((assignment) => {
+                                    const grade = getStudentGrade(assignment.id, student.id)
+                                    if (grade !== "-") {
+                                      totalPoints += Number(assignment.points)
+                                      earnedPoints += Number(grade)
+                                      gradedAssignments++
+                                    }
+                                  })
+
+                                  const average =
+                                    gradedAssignments > 0 ? Math.round((earnedPoints / totalPoints) * 100) : "-"
+
+                                  return (
+                                    <tr key={student.id} className="border-b">
+                                      <td className="p-3">
+                                        <div className="font-medium">{student.name}</div>
+                                        <div className="text-xs text-gray-500">{student.email}</div>
+                                      </td>
+                                      {assignments.map((assignment) => {
+                                        const grade = getStudentGrade(assignment.id, student.id)
+                                        const status = getSubmissionStatus(assignment.id, student.id)
+
+                                        return (
+                                          <td key={`${student.id}-${assignment.id}`} className="p-3">
+                                            <Link href={`/assignment/${assignment.id}`} className="hover:underline">
+                                              <div
+                                                className={`font-medium ${
+                                                  status === "graded"
+                                                    ? "text-green-600"
+                                                    : status === "submitted"
+                                                      ? "text-blue-600"
+                                                      : "text-red-600"
+                                                }`}
+                                              >
+                                                {grade !== "-" ? `${grade}/${assignment.points}` : "-"}
+                                              </div>
+                                              <div className="text-xs text-gray-500">
+                                                {status === "graded"
+                                                  ? "Calificado"
+                                                  : status === "submitted"
+                                                    ? "Entregado"
+                                                    : "No entregado"}
+                                              </div>
+                                            </Link>
+                                          </td>
+                                        )
+                                      })}
+                                      <td className="p-3">
+                                        <div className="font-medium">{average !== "-" ? `${average}%` : "-"}</div>
+                                      </td>
+                                    </tr>
+                                  )
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        ) : (
+                          // Vista de calificaciones para estudiante
+                          <div className="border rounded-lg">
+                            <table className="w-full">
+                              <thead>
+                                <tr className="border-b">
+                                  <th className="text-left p-3">Tarea</th>
+                                  <th className="text-left p-3">Fecha</th>
+                                  <th className="text-left p-3">Puntos</th>
+                                  <th className="text-left p-3">Calificación</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {assignments.map((assignment) => {
+                                  const grade = getStudentGrade(assignment.id, user.id)
+                                  const status = getSubmissionStatus(assignment.id, user.id)
+
+                                  return (
+                                    <tr key={assignment.id} className="border-b">
+                                      <td className="p-3">
+                                        <Link href={`/assignment/${assignment.id}`} className="hover:underline">
+                                          {assignment.title}
+                                        </Link>
+                                      </td>
+                                      <td className="p-3">{assignment.dueDate}</td>
+                                      <td className="p-3">{assignment.points}</td>
+                                      <td className="p-3">
+                                        <div
+                                          className={`font-medium ${
+                                            status === "graded"
+                                              ? "text-green-600"
+                                              : status === "submitted"
+                                                ? "text-blue-600"
+                                                : "text-red-600"
+                                          }`}
+                                        >
+                                          {grade !== "-" ? grade : "-"}
+                                        </div>
+                                        <div className="text-xs text-gray-500">
+                                          {status === "graded"
+                                            ? "Calificado"
+                                            : status === "submitted"
+                                              ? "Entregado"
+                                              : "No entregado"}
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  )
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
                       </div>
-                    </div>
+                    ) : (
+                      <div className="text-center py-6">
+                        <p className="text-gray-500">No hay tareas para calificar</p>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -564,15 +707,24 @@ export default function ClassPage({ params }: { params: { id: string } }) {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {assignments.slice(0, 2).map((assignment) => (
-                    <div key={assignment.id} className="space-y-2">
-                      <div className="flex items-center text-sm">
-                        <Calendar className="mr-2 h-4 w-4 text-gray-500" />
-                        <span>{assignment.dueDate}</span>
+                  {assignments.length > 0 ? (
+                    assignments.slice(0, 3).map((assignment) => (
+                      <div key={assignment.id} className="space-y-2">
+                        <div className="flex items-center text-sm">
+                          <Calendar className="mr-2 h-4 w-4 text-gray-500" />
+                          <span>{assignment.dueDate}</span>
+                        </div>
+                        <p className="font-medium">{assignment.title}</p>
+                        {user.role === "student" && (
+                          <p className="text-xs text-gray-500">
+                            Tiempo restante: {getRemainingTime(assignment.dueDate, assignment.dueTime)}
+                          </p>
+                        )}
                       </div>
-                      <p className="font-medium">{assignment.title}</p>
-                    </div>
-                  ))}
+                    ))
+                  ) : (
+                    <p className="text-gray-500 text-center">No hay entregas próximas</p>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -584,17 +736,7 @@ export default function ClassPage({ params }: { params: { id: string } }) {
               <CardContent>
                 <div className="flex items-center justify-between">
                   <p className="text-2xl font-bold">{classData.code}</p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      navigator.clipboard.writeText(classData.code)
-                      toast({
-                        title: "Código copiado",
-                        description: "El código de la clase ha sido copiado al portapapeles",
-                      })
-                    }}
-                  >
+                  <Button variant="outline" size="sm" onClick={copyClassCode}>
                     Copiar
                   </Button>
                 </div>
@@ -603,6 +745,9 @@ export default function ClassPage({ params }: { params: { id: string } }) {
           </div>
         </div>
       </DashboardShell>
+
+      {/* Visor de archivos */}
+      <FileViewer file={selectedFile} onClose={() => setSelectedFile(null)} />
     </div>
   )
 }
@@ -610,13 +755,19 @@ export default function ClassPage({ params }: { params: { id: string } }) {
 function AssignmentCard({
   title,
   dueDate,
+  dueTime,
   points,
   href,
+  status,
+  remainingTime,
 }: {
   title: string
   dueDate: string
+  dueTime?: string
   points: string
   href: string
+  status?: string
+  remainingTime?: string
 }) {
   return (
     <Link href={href}>
@@ -627,11 +778,29 @@ function AssignmentCard({
               <CardTitle className="text-lg">{title}</CardTitle>
               <CardDescription>
                 <div className="flex items-center mt-1">
-                  <Clock className="mr-1 h-4 w-4" /> Fecha de entrega: {dueDate}
+                  <Clock className="mr-1 h-4 w-4" />
+                  Fecha de entrega: {dueDate}
+                  {dueTime && ` a las ${dueTime}`}
                 </div>
+                {remainingTime && <div className="text-xs mt-1">Tiempo restante: {remainingTime}</div>}
               </CardDescription>
             </div>
-            <div className="text-sm text-gray-500">{points} pts</div>
+            <div className="flex flex-col items-end">
+              <div className="text-sm text-gray-500">{points} pts</div>
+              {status && (
+                <div
+                  className={`text-xs mt-1 px-2 py-0.5 rounded-full ${
+                    status === "graded"
+                      ? "bg-green-100 text-green-800"
+                      : status === "submitted"
+                        ? "bg-blue-100 text-blue-800"
+                        : "bg-red-100 text-red-800"
+                  }`}
+                >
+                  {status === "graded" ? "Calificado" : status === "submitted" ? "Entregado" : "No entregado"}
+                </div>
+              )}
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -649,8 +818,8 @@ function PersonCard({ name, email, avatar }: { name: string; email: string; avat
     <div className="flex items-center justify-between p-3 border rounded-lg">
       <div className="flex items-center gap-3">
         <Avatar>
-          <AvatarImage src="/placeholder.svg?height=40&width=40" alt={name} />
-          <AvatarFallback>{avatar}</AvatarFallback>
+          <AvatarImage src={avatar?.startsWith("data:") ? avatar : "/placeholder.svg?height=40&width=40"} alt={name} />
+          <AvatarFallback>{avatar.substring(0, 2).toUpperCase()}</AvatarFallback>
         </Avatar>
         <div>
           <p className="font-medium">{name}</p>

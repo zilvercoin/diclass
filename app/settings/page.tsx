@@ -11,14 +11,15 @@ import { DashboardShell } from "@/components/dashboard-shell"
 import { useRouter } from "next/navigation"
 import { getCurrentUser } from "@/lib/auth"
 import { useToast } from "@/components/ui/use-toast"
+import { useTheme } from "@/components/theme-provider"
 
 export default function SettingsPage() {
   const router = useRouter()
   const { toast } = useToast()
+  const { theme, setTheme } = useTheme()
   const [user, setUser] = useState<any>(null)
   const [emailNotifications, setEmailNotifications] = useState(true)
   const [pushNotifications, setPushNotifications] = useState(true)
-  const [theme, setTheme] = useState("light")
   const [language, setLanguage] = useState("es")
   const [saving, setSaving] = useState(false)
 
@@ -38,7 +39,6 @@ export default function SettingsPage() {
       const settings = JSON.parse(savedSettings)
       setEmailNotifications(settings.emailNotifications)
       setPushNotifications(settings.pushNotifications)
-      setTheme(settings.theme)
       setLanguage(settings.language)
     }
   }, [router])
@@ -54,7 +54,6 @@ export default function SettingsPage() {
         JSON.stringify({
           emailNotifications,
           pushNotifications,
-          theme,
           language,
         }),
       )
@@ -120,7 +119,11 @@ export default function SettingsPage() {
               <div className="space-y-4">
                 <div>
                   <Label className="font-medium mb-2 block">Tema</Label>
-                  <RadioGroup value={theme} onValueChange={setTheme} className="flex gap-4">
+                  <RadioGroup
+                    value={theme}
+                    onValueChange={(value) => setTheme(value as "light" | "dark" | "system")}
+                    className="flex gap-4"
+                  >
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="light" id="light" />
                       <Label htmlFor="light">Claro</Label>

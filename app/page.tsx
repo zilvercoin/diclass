@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { GraduationCap } from "lucide-react"
+import { ThemeSwitcher } from "@/components/theme-switcher"
 
 export default function Home() {
   return (
@@ -12,6 +13,7 @@ export default function Home() {
             <h1 className="text-3xl font-black tracking-tighter">DiClass</h1>
           </div>
           <div className="flex items-center gap-4">
+            <ThemeSwitcher />
             <Link href="/login">
               <Button variant="ghost">Iniciar Sesión</Button>
             </Link>
@@ -22,14 +24,14 @@ export default function Home() {
         </div>
       </header>
       <main className="flex-1">
-        <section className="py-20 md:py-32 bg-gradient-to-b from-rose-50 to-white">
+        <section className="py-20 md:py-32 bg-gradient-to-b from-rose-50 to-white dark:from-rose-950/20 dark:to-background">
           <div className="container px-4 md:px-6">
             <div className="grid gap-6 lg:grid-cols-2 lg:gap-12 items-center">
               <div className="space-y-4">
                 <h2 className="text-5xl md:text-6xl font-black tracking-tighter text-rose-600 leading-tight">
                   Aprende. Colabora. Crece.
                 </h2>
-                <p className="text-xl text-gray-600 md:text-2xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                <p className="text-xl text-gray-600 md:text-2xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed dark:text-gray-400">
                   DiClass simplifica la enseñanza y el aprendizaje, ayudando a los educadores a gestionar sus clases y a
                   los estudiantes a mantenerse organizados.
                 </p>
@@ -56,30 +58,30 @@ export default function Home() {
             </div>
           </div>
         </section>
-        <section className="py-12 md:py-24 bg-white">
+        <section className="py-12 md:py-24 bg-white dark:bg-background">
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-2">
                 <h2 className="text-4xl font-black tracking-tighter sm:text-5xl text-rose-600">
                   Características Principales
                 </h2>
-                <p className="max-w-[900px] text-gray-600 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
+                <p className="max-w-[900px] text-gray-600 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed dark:text-gray-400">
                   Todo lo que necesitas para gestionar tus clases en un solo lugar
                 </p>
               </div>
             </div>
             <div className="mx-auto grid max-w-5xl items-center gap-6 py-12 lg:grid-cols-3 lg:gap-12">
               <div className="flex flex-col items-center space-y-4 text-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-rose-100">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-rose-100 dark:bg-rose-900/20">
                   <GraduationCap className="h-8 w-8 text-rose-600" />
                 </div>
                 <h3 className="text-xl font-bold">Gestión de Clases</h3>
-                <p className="text-gray-600">
+                <p className="text-gray-600 dark:text-gray-400">
                   Crea, organiza y gestiona todas tus clases desde un solo panel de control.
                 </p>
               </div>
               <div className="flex flex-col items-center space-y-4 text-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-rose-100">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-rose-100 dark:bg-rose-900/20">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="24"
@@ -98,12 +100,12 @@ export default function Home() {
                   </svg>
                 </div>
                 <h3 className="text-xl font-bold">Tareas y Evaluaciones</h3>
-                <p className="text-gray-600">
+                <p className="text-gray-600 dark:text-gray-400">
                   Crea, asigna y califica tareas fácilmente con nuestro sistema intuitivo.
                 </p>
               </div>
               <div className="flex flex-col items-center space-y-4 text-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-rose-100">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-rose-100 dark:bg-rose-900/20">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="24"
@@ -123,7 +125,7 @@ export default function Home() {
                   </svg>
                 </div>
                 <h3 className="text-xl font-bold">Colaboración</h3>
-                <p className="text-gray-600">
+                <p className="text-gray-600 dark:text-gray-400">
                   Facilita la comunicación entre estudiantes y profesores con herramientas colaborativas.
                 </p>
               </div>
@@ -133,10 +135,10 @@ export default function Home() {
       </main>
       <footer className="border-t py-6 md:py-8">
         <div className="container flex flex-col items-center justify-center gap-4 text-center md:flex-row md:gap-8 md:text-left">
-          <div className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2">
             <GraduationCap className="h-6 w-6 text-rose-600" />
             <p className="text-xl font-black tracking-tighter">DiClass</p>
-          </div>
+          </Link>
           <p className="text-sm text-gray-500 md:ml-auto">© 2024 DiClass. Todos los derechos reservados.</p>
           <div className="flex gap-4">
             <Link href="/terms" className="text-sm text-gray-500 hover:underline">

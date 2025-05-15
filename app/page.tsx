@@ -9,7 +9,7 @@ export default function Home() {
         <div className="container flex items-center justify-between">
           <div className="flex items-center gap-2">
             <GraduationCap className="h-8 w-8 text-rose-600" />
-            <h1 className="text-3xl font-black tracking-tighter">FebresClass</h1>
+            <h1 className="text-3xl font-black tracking-tighter">DiClass</h1>
           </div>
           <div className="flex items-center gap-4">
             <Link href="/login">

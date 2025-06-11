@@ -72,49 +72,71 @@ export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
+  // Load data only once on mount
   useEffect(() => {
-    try {
-      // Verificar si el usuario está autenticado
-      const currentUser = getCurrentUser()
-      if (!currentUser) {
-        router.push("/login")
-        return
-      }
+    let mounted = true
 
-      setUser(currentUser)
-
-      // Cargar clases según el rol del usuario
-      let userClasses: ClassItem[] = []
-      if (currentUser.role === "teacher") {
-        userClasses = getTeacherClasses(currentUser.id)
-      } else {
-        userClasses = getStudentClasses(currentUser.id)
-      }
-      setClasses(userClasses)
-
-      // Cargar tareas para el usuario
-      let allAssignments: Assignment[] = []
-      userClasses.forEach((cls) => {
-        try {
-          const classAssignments = getAssignmentsByClassId(cls.id)
-          allAssignments = [...allAssignments, ...classAssignments]
-        } catch (error) {
-          console.error("Error loading assignments for class:", cls.id, error)
+    const loadData = async () => {
+      try {
+        // Verificar si el usuario está autenticado
+        const currentUser = getCurrentUser()
+        if (!currentUser) {
+          if (mounted) {
+            router.push("/login")
+          }
+          return
         }
-      })
 
-      setAssignments(allAssignments)
-    } catch (error) {
-      console.error("Error loading dashboard data:", error)
-      toast({
-        title: "Error",
-        description: "Hubo un problema al cargar los datos",
-        variant: "destructive",
-      })
-    } finally {
-      setIsLoading(false)
+        if (!mounted) return
+
+        setUser(currentUser)
+
+        // Cargar clases según el rol del usuario
+        let userClasses: ClassItem[] = []
+        if (currentUser.role === "teacher") {
+          userClasses = getTeacherClasses(currentUser.id)
+        } else {
+          userClasses = getStudentClasses(currentUser.id)
+        }
+
+        if (!mounted) return
+        setClasses(userClasses)
+
+        // Cargar tareas para el usuario
+        let allAssignments: Assignment[] = []
+        userClasses.forEach((cls) => {
+          try {
+            const classAssignments = getAssignmentsByClassId(cls.id)
+            allAssignments = [...allAssignments, ...classAssignments]
+          } catch (error) {
+            console.error("Error loading assignments for class:", cls.id, error)
+          }
+        })
+
+        if (!mounted) return
+        setAssignments(allAssignments)
+      } catch (error) {
+        console.error("Error loading dashboard data:", error)
+        if (mounted) {
+          toast({
+            title: "Error",
+            description: "Hubo un problema al cargar los datos",
+            variant: "destructive",
+          })
+        }
+      } finally {
+        if (mounted) {
+          setIsLoading(false)
+        }
+      }
     }
-  }, [router, toast])
+
+    loadData()
+
+    return () => {
+      mounted = false
+    }
+  }, []) // Empty dependency array - only run once
 
   const handleCreateClass = () => {
     if (!className || !section || !subject || !user) {
@@ -142,7 +164,7 @@ export default function DashboardPage() {
       })
 
       // Actualizar estado
-      setClasses([...classes, newClass])
+      setClasses((prevClasses) => [...prevClasses, newClass])
 
       // Mostrar notificación
       toast({
@@ -201,7 +223,7 @@ export default function DashboardPage() {
       }
 
       // Actualizar estado
-      setClasses([...classes, classToJoin])
+      setClasses((prevClasses) => [...prevClasses, classToJoin])
 
       // Mostrar notificación
       toast({

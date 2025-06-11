@@ -1,9 +1,7 @@
 "use client"
 
 import type React from "react"
-
 import { createContext, useContext, useEffect, useState } from "react"
-import { getCurrentUser, updateUserData } from "@/lib/auth"
 
 type Theme = "light" | "dark" | "system"
 
@@ -33,16 +31,14 @@ export function ThemeProvider({ children, defaultTheme = "system" }: ThemeProvid
   useEffect(() => {
     setMounted(true)
 
-    // Intentar obtener el tema del usuario actual
-    const currentUser = getCurrentUser()
-    if (currentUser && currentUser.theme) {
-      setTheme(currentUser.theme as Theme)
-    } else {
-      // Si no hay tema de usuario, usar el guardado en localStorage
+    // Only access localStorage after component is mounted
+    try {
       const savedTheme = localStorage.getItem("diclass_theme") as Theme | null
-      if (savedTheme) {
+      if (savedTheme && (savedTheme === "light" || savedTheme === "dark" || savedTheme === "system")) {
         setTheme(savedTheme)
       }
+    } catch (error) {
+      console.warn("Could not access localStorage:", error)
     }
   }, [])
 
@@ -50,7 +46,6 @@ export function ThemeProvider({ children, defaultTheme = "system" }: ThemeProvid
     if (!mounted) return
 
     const root = window.document.documentElement
-
     root.classList.remove("light", "dark")
 
     if (theme === "system") {
@@ -60,33 +55,36 @@ export function ThemeProvider({ children, defaultTheme = "system" }: ThemeProvid
       root.classList.add(theme)
     }
 
-    // Guardar en localStorage como respaldo
-    localStorage.setItem("diclass_theme", theme)
-
-    // Guardar en el perfil del usuario si está autenticado
-    const currentUser = getCurrentUser()
-    if (currentUser) {
-      updateUserData({ theme })
+    // Save to localStorage safely
+    try {
+      localStorage.setItem("diclass_theme", theme)
+    } catch (error) {
+      console.warn("Could not save theme to localStorage:", error)
     }
   }, [theme, mounted])
 
-  // Función para resetear el tema al cerrar sesión
+  const handleSetTheme = (newTheme: Theme) => {
+    setTheme(newTheme)
+  }
+
   const resetTheme = () => {
     setTheme("system")
-    localStorage.setItem("diclass_theme", "system")
+    try {
+      localStorage.setItem("diclass_theme", "system")
+    } catch (error) {
+      console.warn("Could not reset theme in localStorage:", error)
+    }
   }
 
   const value = {
     theme,
-    setTheme: (theme: Theme) => {
-      setTheme(theme)
-    },
+    setTheme: handleSetTheme,
     resetTheme,
   }
 
-  // Evitar el parpadeo durante la hidratación
+  // Prevent hydration mismatch by not rendering until mounted
   if (!mounted) {
-    return <>{children}</>
+    return <ThemeProviderContext.Provider value={value}>{children}</ThemeProviderContext.Provider>
   }
 
   return <ThemeProviderContext.Provider value={value}>{children}</ThemeProviderContext.Provider>
@@ -95,7 +93,9 @@ export function ThemeProvider({ children, defaultTheme = "system" }: ThemeProvid
 export const useTheme = () => {
   const context = useContext(ThemeProviderContext)
 
-  if (context === undefined) throw new Error("useTheme must be used within a ThemeProvider")
+  if (context === undefined) {
+    throw new Error("useTheme must be used within a ThemeProvider")
+  }
 
   return context
 }
